@@ -11,6 +11,6 @@ public class AgentService(HttpClient httpClient) : IAgentService
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadFromJsonAsync<AgentResponse>(cancellationToken)
-            ?? new AgentResponse { Provider = request.Provider, Response = string.Empty };
+            ?? new AgentResponse { Response = string.Empty };
     }
 }

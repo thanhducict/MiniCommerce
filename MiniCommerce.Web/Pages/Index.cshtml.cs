@@ -30,13 +30,13 @@ public class IndexModel(IAgentService agentService) : PageModel
             return BadRequest("You need to log in.");
         }
 
-        if (string.IsNullOrWhiteSpace(request?.Prompt) || string.IsNullOrWhiteSpace(request?.Provider))
+        if (string.IsNullOrWhiteSpace(request?.Prompt))
         {
-            return BadRequest("Provider and prompt are required.");
+            return BadRequest("Prompt is required.");
         }
 
         var result = await agentService.SendAsync(request, cancellationToken);
 
-        return new JsonResult(new { provider = result.Provider, response = result.Response });
+        return new JsonResult(new { response = result.Response });
     }
 }

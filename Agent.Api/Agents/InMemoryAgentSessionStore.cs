@@ -8,16 +8,14 @@ namespace Agent.Api.Agents;
 // key, even under concurrent requests for the same user.
 public class InMemoryAgentSessionStore : IAgentSessionStore
 {
-    private readonly ConcurrentDictionary<string, Lazy<Task<AgentSession>>> sessions = new();
+    private readonly ConcurrentDictionary<Guid, Lazy<Task<AgentSession>>> sessions = new();
 
     public Task<AgentSession> GetOrCreateAsync(
-        string agentName,
         Guid userGuid,
         Func<CancellationToken, Task<AgentSession>> factory,
         CancellationToken cancellationToken = default)
     {
-        var key = $"{agentName}:{userGuid}";
-        var lazy = sessions.GetOrAdd(key, _ => new Lazy<Task<AgentSession>>(() => factory(cancellationToken)));
+        var lazy = sessions.GetOrAdd(userGuid, _ => new Lazy<Task<AgentSession>>(() => factory(cancellationToken)));
         return lazy.Value;
     }
 }

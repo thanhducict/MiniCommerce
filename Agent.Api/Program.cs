@@ -1,19 +1,12 @@
-using Agent.Api;
 using Agent.Api.Agents;
-using Agent.Api.Tools.MicrosoftAgent;
-using Agent.Api.Tools.MyOwnAgent;
 using Google.GenAI;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<IAgentFactory, AgentFactory>();
-builder.Services.AddScoped<IAgent, MyOwnAgent>();
-builder.Services.AddScoped<IAgent, MicrosoftAgent>();
-
 // The agent is stateless, so build it once and share it across all users.
-builder.Services.AddSingleton(_ =>
+builder.Services.AddSingleton<ChatClientAgent>(_ =>
 {
     var apiKey = Environment.GetEnvironmentVariable("Gemini__ApiKey")
         ?? throw new InvalidOperationException("Gemini__ApiKey is not configured.");
@@ -21,27 +14,14 @@ builder.Services.AddSingleton(_ =>
 
     return new ChatClientAgent(
         new Client(vertexAI: false, apiKey: apiKey).AsIChatClient(model),
-        name: "Microsoft AI Agent",
         instructions: "You are a good assistant.",
         tools:
         [
-            AIFunctionFactory.Create(SearchProductTool.GetWeather),
-            AIFunctionFactory.Create(SearchProductTool.GetClimateChange)
         ]);
 });
 
 // Sessions are per user and must outlive a single request, so keep them in a singleton store.
 builder.Services.AddSingleton<IAgentSessionStore, InMemoryAgentSessionStore>();
-
-builder.Services.AddHttpClient<MiniCommerceClient>(client =>
-{
-    var baseUrl = builder.Configuration["MiniCommerceWeb:BaseUrl"]
-        ?? throw new InvalidOperationException("MiniCommerceWeb:BaseUrl is not configured.");
-    client.BaseAddress = new Uri(baseUrl);
-});
-
-// Register every tool as ITool; the agent receives them all automatically.
-builder.Services.AddScoped<ITool, MyOwnSearchProductTool>();
 
 builder.Services.AddHealthChecks();
 
@@ -51,12 +31,13 @@ app.UseHttpsRedirection();
 
 app.MapPost("/agent", async (
     AgentModel request,
-    IAgentFactory factory,
+    ChatClientAgent agent,
+    IAgentSessionStore sessionStore,
     CancellationToken cancellationToken) =>
 {
-    if (string.IsNullOrWhiteSpace(request?.Prompt) || string.IsNullOrWhiteSpace(request?.Provider))
+    if (string.IsNullOrWhiteSpace(request?.Prompt))
     {
-        return Results.BadRequest("Provider and prompt are required.");
+        return Results.BadRequest("Prompt is required.");
     }
 
     if (request.UserGuid == Guid.Empty)
@@ -64,10 +45,13 @@ app.MapPost("/agent", async (
         return Results.BadRequest("UserGuid is required.");
     }
 
-    var agent = factory.Create(request.Provider);
-    var response = await agent.SendAsync(request.UserGuid, request.Prompt, cancellationToken);
+    var session = await sessionStore.GetOrCreateAsync(
+        request.UserGuid,
+        async ct => await agent.CreateSessionAsync(ct),
+        cancellationToken);
+    var response = await agent.RunAsync(request.Prompt, session, cancellationToken: cancellationToken);
 
-    return Results.Ok(new { provider = agent.Name, response });
+    return Results.Ok(new { response = response.ToString() });
 });
 
 app.MapHealthChecks("/health");

@@ -1,19 +1,8 @@
 (function () {
-    const providerToggle = document.getElementById('ai-provider-toggle');
-    const providerInput = document.getElementById('ai-provider-input');
     const userGuidInput = document.getElementById('ai-user-guid-input');
     const promptInput = document.getElementById('ai-prompt-input');
     const chatLog = document.getElementById('ai-chat-log');
     const form = document.getElementById('ai-prompt-form');
-
-    document.querySelectorAll('#ai-prompt-form .dropdown-item').forEach(function (item) {
-        item.addEventListener('click', function (e) {
-            e.preventDefault();
-            const provider = item.getAttribute('data-provider');
-            providerToggle.textContent = provider;
-            providerInput.value = provider;
-        });
-    });
 
     function appendMessage(role, text) {
         const entry = document.createElement('div');
@@ -21,11 +10,7 @@
         chatLog.appendChild(entry);
     }
 
-    promptInput.addEventListener('keydown', async function (e) {
-        if (e.key !== 'Enter') {
-            return;
-        }
-
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
         const prompt = promptInput.value.trim();
@@ -33,7 +18,6 @@
             return;
         }
 
-        const provider = providerInput.value;
         const userGuid = userGuidInput.value;
         const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
 
@@ -48,7 +32,7 @@
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': token
                 },
-                body: JSON.stringify({ provider, prompt, userGuid })
+                body: JSON.stringify({ prompt, userGuid })
             });
 
             if (!response.ok) {
@@ -57,7 +41,7 @@
             }
 
             const data = await response.json();
-            appendMessage(data.provider, data.response);
+            appendMessage('Assistant', data.response);
         } catch (err) {
             appendMessage('Error', 'Unable to reach the server.');
         } finally {

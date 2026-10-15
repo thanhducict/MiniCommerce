@@ -7,7 +7,6 @@ namespace Agent.Api.Agents;
 public interface IAgentSessionStore
 {
     Task<AgentSession> GetOrCreateAsync(
-        string agentName,
         Guid userGuid,
         Func<CancellationToken, Task<AgentSession>> factory,
         CancellationToken cancellationToken = default);
