@@ -45,11 +45,13 @@ app.MapPost("/agent", async (
         return Results.BadRequest("UserGuid is required.");
     }
 
+    var chatMessage = new ChatMessage(ChatRole.User, request.Prompt);
+
     var session = await sessionStore.GetOrCreateAsync(
         request.UserGuid,
         async ct => await agent.CreateSessionAsync(ct),
         cancellationToken);
-    var response = await agent.RunAsync(request.Prompt, session, cancellationToken: cancellationToken);
+    var response = await agent.RunAsync(chatMessage, session, cancellationToken: cancellationToken);
 
     return Results.Ok(new { response = response.ToString() });
 });
