@@ -1,6 +1,6 @@
 using Microsoft.Agents.AI;
 
-namespace Agent.Api.Agents;
+namespace Agent.Api.SessionStore;
 
 // Keeps one long-lived conversation session per (agent, user) so follow-up
 // prompts continue the same conversation instead of starting from scratch.

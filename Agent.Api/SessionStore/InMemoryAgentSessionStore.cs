@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Agents.AI;
 
-namespace Agent.Api.Agents;
+namespace Agent.Api.SessionStore;
 
 // In-memory session store. Registered as a singleton so sessions survive
 // across requests. Lazy<Task<>> guarantees the factory runs exactly once per

@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="Agent.Api/Agent.Api.csproj" />
+  <Project Path="MiniCommerce.Contracts/MiniCommerce.Contracts.csproj" />
   <Project Path="MiniCommerce.Web/MiniCommerce.Web.csproj" Id="e4e59b47-681e-44c9-af91-33206df19f8c" />
 </Solution>

@@ -14,13 +14,12 @@
                 <div id="ai-chat-log" class="mb-3"></div>
                 <form id="ai-prompt-form" method="post">
                     @Html.AntiForgeryToken()
+                    <input asp-for="AiAgentModel.UserGuid" id="ai-user-guid-input" type="hidden"
+                           value="@Model.AiAgentModel.UserGuid" />
                     <div class="input-group mb-3">
-                        <span class="input-group-text">gemini-3.5-flash-lite</span>
-                        <input asp-for="AiAgentModel.UserGuid" id="ai-user-guid-input" type="hidden"
-                               value="@Model.AiAgentModel.UserGuid" />
                         <input asp-for="AiAgentModel.Prompt" id="ai-prompt-input" type="text" class="form-control"
                                autocomplete="off" />
-                           <button class="btn btn-primary" type="submit">Send</button>
+                        <button class="btn btn-primary" type="submit">Send</button>
                     </div>
                 </form>
             }

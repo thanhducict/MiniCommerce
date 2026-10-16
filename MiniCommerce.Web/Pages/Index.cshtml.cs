@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.IdentityModel.JsonWebTokens;
+using MiniCommerce.Contracts.Agent;
 using MiniCommerce.Web.Models.Agent;
 using MiniCommerce.Web.Services.Agent;
 
@@ -35,8 +36,15 @@ public class IndexModel(IAgentService agentService) : PageModel
             return BadRequest("Prompt is required.");
         }
 
-        var result = await agentService.SendAsync(request, cancellationToken);
+        var result = await agentService.SendAsync(
+            new AgentPromptRequest { Prompt = request.Prompt, UserGuid = request.UserGuid },
+            cancellationToken);
 
-        return new JsonResult(new { response = result.Response });
+        return new JsonResult(new AgentPromptResponse { 
+            Response = result.Response,
+            InputToken = result.InputToken,
+            OutputToken = result.OutputToken,
+            ReasoningToken = result.ReasoningToken
+        });
     }
 }

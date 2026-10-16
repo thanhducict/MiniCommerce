@@ -1,7 +1,8 @@
-using Agent.Api.Agents;
+using Agent.Api.SessionStore;
 using Google.GenAI;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using MiniCommerce.Contracts.Agent;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +31,7 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 
 app.MapPost("/agent", async (
-    AgentModel request,
+    AgentPromptRequest request,
     ChatClientAgent agent,
     IAgentSessionStore sessionStore,
     CancellationToken cancellationToken) =>
@@ -47,13 +48,31 @@ app.MapPost("/agent", async (
 
     var chatMessage = new ChatMessage(ChatRole.User, request.Prompt);
 
+    var chatClientAgentRunOptions = new ChatClientAgentRunOptions
+    {
+        ChatOptions = new ChatOptions
+        {
+            Reasoning = new ReasoningOptions
+            {
+                Effort = ReasoningEffort.Low,
+                Output = ReasoningOutput.Full
+            },
+            MaxOutputTokens = 1024
+        }
+    };
+
     var session = await sessionStore.GetOrCreateAsync(
         request.UserGuid,
         async ct => await agent.CreateSessionAsync(ct),
         cancellationToken);
-    var response = await agent.RunAsync(chatMessage, session, cancellationToken: cancellationToken);
+    var response = await agent.RunAsync(chatMessage, session, chatClientAgentRunOptions, cancellationToken: cancellationToken);
 
-    return Results.Ok(new { response = response.ToString() });
+    return Results.Ok(new AgentPromptResponse {
+        Response = response.ToString() ?? string.Empty,
+        InputToken = response.Usage?.InputTokenCount ?? 0,
+        OutputToken = response.Usage?.OutputTokenCount ?? 0,
+        ReasoningToken = response.Usage?.ReasoningTokenCount ?? 0
+    });
 });
 
 app.MapHealthChecks("/health");
